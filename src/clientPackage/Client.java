@@ -1,35 +1,36 @@
 package clientPackage;
-import java.io.BufferedReader;
+import commonPackage.Operation;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 public class Client {
-    private static final String FORMAT = "-?\\d+(\\.\\d+)? [+\\-*/] -?\\d+(\\.\\d+)?";
     public static void main(String[] args) {
-        try {
-            System.out.println("Je suis un client pas encore connecté…");
+        try {System.out.println("Je suis un client pas encore connecté…");
             Socket socket = new Socket("127.0.0.1", 1234);
             System.out.println("je suis un client connecté");
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             Scanner sc = new Scanner(System.in);
-            String saisie;
-            do {System.out.print("Entrez une opération (ex. 55 * 25) ou « fin » : ");
-                saisie = sc.nextLine().trim();
-                if (saisie.equalsIgnoreCase("fin")) {out.println("fin");
-                } else if (!saisie.matches(FORMAT)) {
-                    System.out.println("Syntaxe incorrecte : écrivez  opérande opérateur opérande  (avec des espaces)");} else {
-                    out.println(saisie);
-                    String resultat = in.readLine();
-                    System.out.println("Résultat : " + resultat);}
-            } while (!saisie.equalsIgnoreCase("fin"));
-            System.out.println("Fin de la communication");
+            System.out.print("Premier opérande : ");
+            double a = sc.nextDouble();
+            System.out.print("Opérateur (+, -, *, /) : ");
+            char op = sc.next().charAt(0);
+            System.out.print("Deuxième opérande : ");
+            double b = sc.nextDouble();
+            Operation operation = new Operation(a, op, b);
+            out.writeObject(operation);
+            out.flush();
+            double resultat = in.readDouble();
+            if (Double.isNaN(resultat)) {
+                System.out.println("Opération impossible (division par zéro ou opérateur invalide)");} else {
+                System.out.println(a + " " + op + " " + b + " = " + resultat);}
             in.close();
             out.close();
-            socket.close();
-        } catch (IOException e) {e.printStackTrace();
+            socket.close();} catch (IOException e) {e.printStackTrace();
         }
     }
 }
